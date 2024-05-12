@@ -9,7 +9,7 @@ import quantstats as qs
 import gurobipy as gp
 import argparse
 import warnings
-
+from scipy.optimize import minimize
 """
 Project Setup
 """
@@ -66,7 +66,7 @@ class EqualWeightPortfolio:
         """
         TODO: Complete Task 1 Below
         """
-
+        self.portfolio_weights[assets] = 1 / len(assets)
         """
         TODO: Complete Task 1 Above
         """
@@ -110,13 +110,36 @@ class RiskParityPortfolio:
     def calculate_weights(self):
         # Get the assets by excluding the specified column
         assets = df.columns[df.columns != self.exclude]
-
         # Calculate the portfolio weights
         self.portfolio_weights = pd.DataFrame(index=df.index, columns=df.columns)
 
         """
         TODO: Complete Task 2 Below
         """
+        # Ensure index is sufficient for lookback
+        if len(df.index) < self.lookback + 1:  # +1 to start calculation from 52nd day
+            raise ValueError("Dataframe is too short for the specified lookback period.")
+
+        # Calculate weights dynamically each day starting from day 52
+        for dth, i in enumerate(range(51, len(df.index))):
+            # Subset the dataframe for the lookback period
+            historical_returns = df_returns.iloc[i-self.lookback:i][assets]
+            
+            # Calculate daily standard deviation (volatility) of returns
+            volatilities = historical_returns.std()
+
+            # Calculate inverse volatilities
+            inverse_volatilities = 1 / volatilities
+
+            # Normalize the inverse volatilities to sum to 1 to form the weights
+            normalized_weights = inverse_volatilities / inverse_volatilities.sum()
+
+            # Assign weights to the specific day
+            self.portfolio_weights.loc[df_returns.index[i], assets] = normalized_weights
+
+        # Set the weight of the excluded asset to zero
+        self.portfolio_weights[self.exclude] = 0
+        self.portfolio_weights.fillna(0, inplace=True)
 
         """
         TODO: Complete Task 2 Above
@@ -124,6 +147,8 @@ class RiskParityPortfolio:
 
         self.portfolio_weights.ffill(inplace=True)
         self.portfolio_weights.fillna(0, inplace=True)
+
+
 
     def calculate_portfolio_returns(self):
         # Ensure weights are calculated
