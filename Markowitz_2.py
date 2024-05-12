@@ -61,34 +61,13 @@ class MyPortfolio:
         self.exclude = exclude
         self.lookback = lookback
         self.gamma = gamma
-
-    # def calculate_weights(self):
-    #     # Get the assets by excluding the specified column
-    #     assets = self.price.columns[self.price.columns != self.exclude]
-
-    #     # Calculate the portfolio weights
-    #     self.portfolio_weights = pd.DataFrame(
-    #         index=self.price.index, columns=self.price.columns
-    #     )
-
-    #     """
-    #     TODO: Complete Task 4 Below
-    #     """
-        
-
-    #     """
-    #     TODO: Complete Task 4 Above
-    #     """
-
-    #     self.portfolio_weights.ffill(inplace=True)
-    #     self.portfolio_weights.fillna(0, inplace=True)
     
     def calculate_weights(self):
         # Get the assets by excluding the specified column
         assets = self.price.columns[self.price.columns != self.exclude]
 
         # Calculate the portfolio weights
-        self.portfolio_weights = pd.DataFrame(index=df.index, columns=df.columns)
+        self.portfolio_weights = pd.DataFrame(index=self.price.index, columns=self.price.columns)
 
         for i in range(self.lookback + 1, len(df)):
             R_n = self.returns.copy()[assets].iloc[i - self.lookback : i]
@@ -116,12 +95,11 @@ class MyPortfolio:
                 # Sample Code: Initialize Decision w and the Objective
                 # NOTE: You can modify the following code
                 w = model.addMVar(n, name="w", ub=1)
-                # model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
                 
-                model.setObjective(w @ mu - (gamma/2) * w @ Sigma @ w, gp.GRB.MAXIMIZE)
+                model.setObjective(w.T @ mu - (gamma/2) * w.T @ Sigma @ w, gp.GRB.MAXIMIZE)
 
                 model.addConstr(w.sum() == 1)
-                model.addConstr(w >= 0)
+                # model.addConstr(w >= 0)
 
                 """
                 TODO: Complete Task 3 Below
