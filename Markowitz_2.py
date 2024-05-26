@@ -55,7 +55,7 @@ class MyPortfolio:
     NOTE: You can modify the initialization function
     """
 
-    def __init__(self, price, exclude, lookback=300, gamma=0):
+    def __init__(self, price, exclude, lookback=230, gamma=0.0000000001):
         self.price = price
         self.returns = price.pct_change().fillna(0)
         self.exclude = exclude
@@ -70,10 +70,9 @@ class MyPortfolio:
         self.portfolio_weights = pd.DataFrame(index=self.price.index, columns=self.price.columns)
 
         for i in range(self.lookback + 1, len(df)):
-            R_n = self.returns.copy()[assets].iloc[i - self.lookback : i]
-            self.portfolio_weights.loc[df.index[i], assets] = self.mv_opt(
-                R_n, self.gamma
-            )
+            R_n = self.returns.iloc[i - self.lookback : i]
+            w = self.mv_opt(R_n, self.gamma)
+            self.portfolio_weights.iloc[i] = w
 
         self.portfolio_weights.ffill(inplace=True)
         self.portfolio_weights.fillna(0, inplace=True)
@@ -94,9 +93,9 @@ class MyPortfolio:
 
                 # Sample Code: Initialize Decision w and the Objective
                 # NOTE: You can modify the following code
-                w = model.addMVar(n, name="w", ub=1)
+                w = model.addMVar(n, name="w")
                 
-                model.setObjective(w.T @ mu - (gamma/2) * w.T @ Sigma @ w, gp.GRB.MAXIMIZE)
+                model.setObjective(w @ mu - (gamma/2) * w @ Sigma @ w, gp.GRB.MAXIMIZE)
 
                 model.addConstr(w.sum() == 1)
                 # model.addConstr(w >= 0)
